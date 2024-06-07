@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arc Reactor Control</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="shortcut icon" href="asset/power.png" type="image/x-icon">
+</head>
+
+<body>
+    <div id="content">
+        <div>
+            <input type="color" id="color">
+            <button type="button" id="color_btn">color</button>
+        </div>
+        <div id="power"></div>
+        <div>
+            <select name="brightness" id="brightness">
+                <option value=100>medium (100)</option>
+                <option value=20>light (20)</option>
+                <option value=255>strong (255)</option>
+            </select>
+            <button type="button" class="" id="brightness_btn">brightness</button>
+        </div>
+
+    </div>
+    <script>
+        function hex2rgb(hex) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+
+            return [ r, g, b ];
+        }
+
+
+        var color_btn = document.getElementById("color_btn")
+        var brightness_btn = document.getElementById("brightness_btn")
+        var power_btn = document.getElementById("power")
+
+        //check power
+        fetch("/checkPower").then(res => res.json()).then(data => {
+            if(data["power"] == "off"){
+                power_btn.classList.add("off")
+            }
+        })
+
+        //check color
+        fetch("/checkColor").then(res => res.json()).then(data => {
+
+            const componentToHex = (c) => {
+                const hex = parseInt(c).toString(16);
+                return hex.length == 1 ? "0" + hex : hex;
+            }
+
+            document.getElementById("color").value =  "#" + componentToHex(data["color"]['r']) + componentToHex(data["color"]['g']) + componentToHex(data["color"]['b']);
+
+        })
+
+        //check brightness
+        fetch("/checkBrightness").then(res => res.json()).then(data => {
+
+            document.getElementById("brightness").value =  data["brightness"]
+
+        })
+
+        color_btn.onclick = function () {
+            var value = document.getElementById("color").value
+            // HEX TO RGB
+            value = hex2rgb(value)
+
+            fetch(`/changeColor?r=${value[0].toString()}&g=${value[1].toString()}&b=${value[2].toString()}`).then(console.log("change color"))
+        }
+        
+        brightness_btn.onclick = function(){
+            var value = document.getElementById("brightness").value
+            fetch(`/changeBrightness?b=${value}`).then(console.log("change brightness"))
+        }
+
+        power_btn.onclick = function(){
+            if(power_btn.classList.contains("off")){
+                //turn on
+                power_btn.classList.remove("off")
+                fetch(`/changePower?p=on`).then(console.log("turn on"))
+            } else {
+                //turn off
+                power_btn.classList.add("off")
+                fetch(`/changePower?p=off`).then(console.log("turn off"))
+            }
+            
+        }
+
+    </script>
+</body>
+
+</html>
